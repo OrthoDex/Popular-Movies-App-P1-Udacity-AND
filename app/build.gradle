@@ -16,7 +16,7 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             buildTypes.each {
-                it.buildConfigField 'String', 'TMDB_API_KEY', "\"323840fcefb6e71163285dcf6fedba87\""
+                it.buildConfigField 'String', 'TMDB_API_KEY', "\"bca94012dbfb65b71db07f0e66c012a2\""
             }
         }
     }
