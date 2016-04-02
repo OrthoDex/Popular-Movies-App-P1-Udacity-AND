@@ -6,8 +6,4 @@
 .DS_Store
 /build
 /captures
-<<<<<<< HEAD
 /gradle.properties
-=======
-/app/build.gradle
->>>>>>> 5103d8b07dda5be4fc049462624f25a69f292c8e
