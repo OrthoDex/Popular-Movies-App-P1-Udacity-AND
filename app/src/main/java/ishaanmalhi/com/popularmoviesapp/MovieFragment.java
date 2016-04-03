@@ -1,9 +1,11 @@
 package ishaanmalhi.com.popularmoviesapp;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -27,12 +29,13 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class MovieFragment extends Fragment {
 
     //Private Variables
-    private MovieImageAdapter adapter;
-
+    private MovieDetailAdapter adapter;
+    private MovieDetail movie;
     public MovieFragment() {
         // Required empty public constructor
     }
@@ -40,7 +43,6 @@ public class MovieFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
     }
 
     @Override
@@ -63,37 +65,46 @@ public class MovieFragment extends Fragment {
     }
 
     @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelable("movies", movie);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_movie, container, false);
 
-        adapter = new MovieImageAdapter(getActivity(), new ArrayList<MovieImage>());
+        adapter = new MovieDetailAdapter(getActivity(), new ArrayList<MovieDetail>());
         GridView gridView = (GridView) rootView.findViewById(R.id.movies_grid);
         gridView.setAdapter(adapter);
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
+                MovieDetail movie = (MovieDetail) parent.getItemAtPosition(position);
+                Intent movieInfoIntent = new Intent(getActivity(),DetailActivity.class)
+                                            .putExtra("MovieDetails",(Parcelable) movie);
+                startActivity(movieInfoIntent);
             }
         });
         return rootView;
     }
 
-    class FetchMovieTask extends AsyncTask<String, Void, MovieImage[]> {
+    class FetchMovieTask extends AsyncTask<String, Void, MovieDetail[]> {
 
         private final String LOG_TAG = FetchMovieTask.class.getSimpleName();
 
-        protected void onPostExecute(MovieImage[] result) {
+        protected void onPostExecute(MovieDetail[] result) {
             if (result != null){
                 adapter.clear();
-                for (MovieImage movieInfostr : result){
+                for (MovieDetail movieInfostr : result){
                     adapter.add(movieInfostr);
                 }
             }
         }
 
-        private MovieImage[] getMovieDatafromJson(String movieJsonstr) throws JSONException
+        private MovieDetail[] getMovieDatafromJson(String movieJsonstr) throws JSONException
         {
             JSONObject movieInfo = new JSONObject(movieJsonstr);
 
@@ -101,30 +112,35 @@ public class MovieFragment extends Fragment {
             final String TMDB_RESULTS = "results";
             final String ID = "id";
             final String IMAGE = "poster_path";
+            final String TITLE = "original_title";
+            final String SYNOPSIS = "overview";
+            final String USER_RATING = "vote_average";
+            final String RELEASE_DATE = "release_date";
 
             JSONObject moviesJson = new JSONObject(movieJsonstr);
             JSONArray movieArray = moviesJson.getJSONArray(TMDB_RESULTS);
 
             //Log.v(LOG_TAG,movieArray.toString());
-            MovieImage[] result = new MovieImage[movieArray.length()];
-            for (int i = 0; i < movieArray.length(); i++){
-                result[i] = new MovieImage("","");
-            }
+            MovieDetail[] result = new MovieDetail[movieArray.length()];
+
             for (int i = 0; i < movieArray.length(); i++){
 
                 JSONObject movie = movieArray.getJSONObject(i);
                 String id = movie.getString(ID);
                 String image_uri = "http://image.tmdb.org/t/p/w185/".concat(movie.getString(IMAGE));
+                String title = movie.getString(TITLE);
+                String synopsis = movie.getString(SYNOPSIS);
+                String release_date = movie.getString(RELEASE_DATE);
+                String user_rating = movie.getString(USER_RATING);
                 //Log.v(LOG_TAG,image_uri);
-                result[i].image_url = image_uri;
-                result[i].id = id;
+                result[i] = new MovieDetail(id,image_uri,title,synopsis,release_date,user_rating);
             }
 
             return result;
         }
 
         @Override
-        protected MovieImage[] doInBackground(String... params) {
+        protected MovieDetail[] doInBackground(String... params) {
 
             HttpURLConnection urlConnection = null;
             BufferedReader reader = null;
@@ -135,6 +151,7 @@ public class MovieFragment extends Fragment {
                 final String TMDB_BASE_URL = "http://api.themoviedb.org/3/discover/movie?";
                 final String API_KEY = "api_key";
                 final String SORT_ORDER = "sort-by";
+
                 String sort_order = "popular.desc";
                 if(params[0] != sort_order){
                     sort_order = "vote_average.desc";
@@ -189,7 +206,7 @@ public class MovieFragment extends Fragment {
                 }
             }
 
-            MovieImage[] result = new MovieImage[0];
+            MovieDetail[] result = new MovieDetail[0];
             try{
                 result = getMovieDatafromJson(movieJsonstr);
             } catch (JSONException e){
