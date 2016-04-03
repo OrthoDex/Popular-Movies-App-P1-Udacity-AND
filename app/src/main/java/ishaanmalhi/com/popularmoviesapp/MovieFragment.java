@@ -69,7 +69,7 @@ public class MovieFragment extends Fragment {
         {
             JSONObject movieInfo = new JSONObject(movieJsonstr);
             //Names of objects that need to be extracted
-            final String 
+            final String;
 
             return result;
         }
