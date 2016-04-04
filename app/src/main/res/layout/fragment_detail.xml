@@ -3,14 +3,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="ishaanmalhi.com.popularmoviesapp.DetailFragment"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:padding="10dp">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="@dimen/movie_title_font_size"
         android:id="@+id/original_title"
-        android:text="Title of the movie" />
+        android:fontFamily="sans-serif-light"
+        android:backgroundTint="@color/colorPrimary"
+        />
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

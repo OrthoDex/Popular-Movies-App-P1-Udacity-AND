@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="movie_detail_container" type="id">movie_detail</item>
+    <item name="detail_fragment" type="id">detail_fragment</item>
+</resources>
