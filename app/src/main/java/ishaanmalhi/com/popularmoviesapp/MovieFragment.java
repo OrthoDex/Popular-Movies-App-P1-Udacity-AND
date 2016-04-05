@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.preference.PreferenceManager;
@@ -31,6 +32,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class MovieFragment extends Fragment {
 
@@ -166,21 +168,22 @@ public class MovieFragment extends Fragment {
             String movieJsonstr = null;
 
             try {
-                final String TMDB_BASE_URL = "http://api.themoviedb.org/3/discover/movie?";
+                String TMDB_BASE_URL = "http://api.themoviedb.org/3/movie";
                 final String API_KEY = "api_key";
-                final String SORT_ORDER = "sort-by";
 
                 Log.v(LOG_TAG,"Sort Order:"+params[0]);
-                String sort_order = "popular.desc";
-                if(params[0] != "popular"){
-                    sort_order = "vote_average.desc";
+
+                if(!params[0].equals("popular")){
+                    TMDB_BASE_URL += "/popular?";
                 }
-                Log.v(LOG_TAG,"Query sort order:"+sort_order);
+                else {
+                    TMDB_BASE_URL += "/top_rated?";
+                }
                 Uri builtUri = Uri.parse(TMDB_BASE_URL)
                                     .buildUpon()
-                                    .appendQueryParameter(SORT_ORDER,sort_order)
                                     .appendQueryParameter(API_KEY, BuildConfig.TMDB_API_KEY)
                                     .build();
+                Log.v(LOG_TAG,"Built URI:"+builtUri.toString());
                 URL url = new URL(builtUri.toString());
                 urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setRequestMethod("GET");
