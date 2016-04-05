@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@id/movie_detail_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context="ishaanmalhi.com.popularmoviesapp.DetailActivity"
-    tools:ignore="MergeRootFrame">
+    tools:context="ishaanmalhi.com.popularmoviesapp.DetailActivity">
+
     <fragment android:name="ishaanmalhi.com.popularmoviesapp.DetailFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@id/detail_fragment"
-        />
-</FrameLayout>
+        tools:layout="@layout/fragment_detail" />
+
+</ScrollView>

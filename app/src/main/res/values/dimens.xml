@@ -3,6 +3,6 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
-    <dimen name="poster_image_padding">20dp</dimen>
+    <dimen name="content_padding">10dp</dimen>
     <dimen name="movie_title_font_size">30dp</dimen>
 </resources>

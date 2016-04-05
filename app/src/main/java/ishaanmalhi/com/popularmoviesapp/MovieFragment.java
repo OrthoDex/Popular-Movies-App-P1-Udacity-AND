@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -43,6 +44,7 @@ public class MovieFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
     }
 
     @Override
@@ -56,6 +58,20 @@ public class MovieFragment extends Fragment {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
         String sort_order = sharedPreferences.getString(getString(R.string.pref_sort_order_key),getString(R.string.pref_sort_order_default));
         fetchMovieTask.execute(sort_order);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_refresh) {
+            updateMovieList();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+
     }
 
     @Override
@@ -116,6 +132,7 @@ public class MovieFragment extends Fragment {
             final String SYNOPSIS = "overview";
             final String USER_RATING = "vote_average";
             final String RELEASE_DATE = "release_date";
+            final String BACKDROP_IMG = "backdrop_path";
 
             JSONObject moviesJson = new JSONObject(movieJsonstr);
             JSONArray movieArray = moviesJson.getJSONArray(TMDB_RESULTS);
@@ -132,8 +149,9 @@ public class MovieFragment extends Fragment {
                 String synopsis = movie.getString(SYNOPSIS);
                 String release_date = movie.getString(RELEASE_DATE);
                 String user_rating = movie.getString(USER_RATING);
+                String backdrop_path = movie.getString(BACKDROP_IMG);
                 //Log.v(LOG_TAG,image_uri);
-                result[i] = new MovieDetail(id,image_uri,title,synopsis,release_date,user_rating);
+                result[i] = new MovieDetail(id,image_uri,title,synopsis,release_date,user_rating,backdrop_path);
             }
 
             return result;
@@ -152,10 +170,12 @@ public class MovieFragment extends Fragment {
                 final String API_KEY = "api_key";
                 final String SORT_ORDER = "sort-by";
 
+                Log.v(LOG_TAG,"Sort Order:"+params[0]);
                 String sort_order = "popular.desc";
-                if(params[0] != sort_order){
+                if(params[0] != "popular"){
                     sort_order = "vote_average.desc";
                 }
+                Log.v(LOG_TAG,"Query sort order:"+sort_order);
                 Uri builtUri = Uri.parse(TMDB_BASE_URL)
                                     .buildUpon()
                                     .appendQueryParameter(SORT_ORDER,sort_order)

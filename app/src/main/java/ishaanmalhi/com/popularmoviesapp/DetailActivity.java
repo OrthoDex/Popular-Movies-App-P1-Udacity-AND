@@ -1,7 +1,9 @@
 package ishaanmalhi.com.popularmoviesapp;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -12,11 +14,13 @@ public class DetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+/*
         if (savedInstanceState == null){
             getSupportFragmentManager().beginTransaction()
                                         .add(R.id.detail_fragment, new DetailFragment())
                                         .commit();
-        }
+        }*/
     }
 
     @Override
@@ -30,6 +34,7 @@ public class DetailActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         if(id == R.id.action_settings){
+            startActivity(new Intent(this, SettingsActivity.class));
             return true;
         }
         return super.onOptionsItemSelected(item);

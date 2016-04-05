@@ -2,4 +2,5 @@
 <resources>
     <item name="movie_detail_container" type="id">movie_detail</item>
     <item name="detail_fragment" type="id">detail_fragment</item>
+    <item name="action_refresh" type="id">Refresh</item>
 </resources>
