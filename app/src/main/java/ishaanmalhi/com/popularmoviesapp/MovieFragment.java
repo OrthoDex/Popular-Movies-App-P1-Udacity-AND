@@ -2,6 +2,8 @@ package ishaanmalhi.com.popularmoviesapp;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -17,7 +19,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.FrameLayout;
 import android.widget.GridView;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -41,6 +47,16 @@ public class MovieFragment extends Fragment {
     private MovieDetail movie;
     public MovieFragment() {
         // Required empty public constructor
+    }
+
+    //function to check for network access
+    private boolean isNetWorkAvailable() {
+        ConnectivityManager cm = (ConnectivityManager) getActivity().getSystemService(getActivity().CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+        if (networkInfo != null && networkInfo.isConnected()) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -69,7 +85,8 @@ public class MovieFragment extends Fragment {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_refresh) {
-            updateMovieList();
+            if(isNetWorkAvailable())
+                updateMovieList();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -79,7 +96,8 @@ public class MovieFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        updateMovieList();
+        if(isNetWorkAvailable())
+            updateMovieList();
     }
 
     @Override
@@ -96,7 +114,15 @@ public class MovieFragment extends Fragment {
 
         adapter = new MovieDetailAdapter(getActivity(), new ArrayList<MovieDetail>());
         GridView gridView = (GridView) rootView.findViewById(R.id.movies_grid);
+
         gridView.setAdapter(adapter);
+
+        TextView error_text = (TextView) rootView.findViewById(R.id.error_text);
+        error_text.setText("");
+        if (!isNetWorkAvailable()) {
+            Log.v(MainActivity.class.getSimpleName(),"No Network Detected");
+            error_text.setText("You need an internet connection to view the movies!");
+        }
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -173,7 +199,7 @@ public class MovieFragment extends Fragment {
 
                 Log.v(LOG_TAG,"Sort Order:"+params[0]);
 
-                if(!params[0].equals("popular")){
+                if(params[0].equals("popular")){
                     TMDB_BASE_URL += "/popular?";
                 }
                 else {

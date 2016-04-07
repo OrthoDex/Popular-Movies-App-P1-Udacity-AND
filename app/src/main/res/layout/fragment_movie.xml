@@ -2,7 +2,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/movie_fragment"
     tools:context="ishaanmalhi.com.popularmoviesapp.MovieFragment">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/error_text" />
 
     <GridView xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/movies_grid"
