@@ -10,9 +10,22 @@
     <string name="detail_image_view_description">Poster_path</string>
     <string name="title_activity_settings">Settings</string>
     <string name="pref_sort_order_label">Sort Order:</string>
-    <string name="pref_sort_order_label_popular">popular</string>
-    <string name="pref_sort_order_label_top_rated">top rated</string>
+    <string name="pref_sort_order_label_popular">Popular</string>
+    <string name="pref_sort_order_label_top_rated">Top rated</string>
+    <string name="pref_sort_order_label_favorite">Favorite</string>
 
     <string name="pref_sort_order_popular">popular</string>
     <string name="pref_sort_order_top_rated">top rated</string>
+    <string name="pref_sort_order_favorite">favorite</string>
+
+    <string name="loading">Loading</string>
+    <string name="backdrop_image">Backdrop Image</string>
+    <string name="trailers">Trailers</string>
+    <string name="reviews">Reviews</string>
+    <string name="action_share">Share</string>
+    <string name="offline_error">You must go online to view the trailers!</string>
+    <string name="net_error">You need an internet connection to view the movies!</string>
+    <string name="user_rating_base_value">/10</string>
+    <string name="watch_trailer">"Watch Trailer "</string>
+
 </resources>

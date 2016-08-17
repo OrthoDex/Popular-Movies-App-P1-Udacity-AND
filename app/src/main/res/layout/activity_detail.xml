@@ -1,16 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/movie_detail_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
     android:background="@color/titleColor"
     tools:context="ishaanmalhi.com.popularmoviesapp.DetailActivity">
-
-    <fragment android:name="ishaanmalhi.com.popularmoviesapp.DetailFragment"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@id/detail_fragment"
-        tools:layout="@layout/fragment_detail" />
 
 </ScrollView>

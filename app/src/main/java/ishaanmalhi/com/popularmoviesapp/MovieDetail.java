@@ -2,6 +2,8 @@ package ishaanmalhi.com.popularmoviesapp;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import timber.log.Timber;
+
 public class MovieDetail implements Parcelable {
     String id;
     String image_url;
@@ -9,7 +11,9 @@ public class MovieDetail implements Parcelable {
     String synopsis;
     String user_rating;
     String release_date;
-    String backdrop_path;//For Later implementation
+    String backdrop_path;
+    String[] reviews;
+    String[] trailer_keys;
     /*
     Custom class to hold movie id and image-url so that
     a query for movie id can be sent when movie-image is clicked
@@ -23,6 +27,29 @@ public class MovieDetail implements Parcelable {
         this.title = title;
         this.synopsis = synopsis;
         this.backdrop_path = backdrop;
+    }
+
+    // Setters for trailer key and reviews
+    public void setTrailer_keys(String[] trailer_keys) {
+        if (trailer_keys.length > 0) {
+            this.trailer_keys = new String[trailer_keys.length];
+            System.arraycopy(trailer_keys, 0, this.trailer_keys, 0, trailer_keys.length);
+            Timber.d("Trailer No 0:" + this.trailer_keys[0]);
+        } else {
+            this.trailer_keys = new String[1];
+            this.trailer_keys[0] = "No Trailers Found";
+        }
+    }
+
+    public void setReviews(String[] reviews) {
+        if (reviews.length > 0) {
+            this.reviews = new String[reviews.length];
+            System.arraycopy(reviews, 0, this.reviews, 0, reviews.length);
+            Timber.d("review 0 :" + this.reviews[0]);
+        } else {
+            this.reviews = new String[1];
+            this.reviews[0] = "No Reviews Found";
+        }
     }
 
     @Override

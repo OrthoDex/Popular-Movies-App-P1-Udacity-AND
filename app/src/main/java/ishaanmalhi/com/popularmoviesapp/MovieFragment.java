@@ -1,15 +1,10 @@
 package ishaanmalhi.com.popularmoviesapp;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,11 +14,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.FrameLayout;
 import android.widget.GridView;
-import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -37,31 +29,30 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Objects;
+
+import timber.log.Timber;
 
 public class MovieFragment extends Fragment {
 
     //Private Variables
     private MovieDetailAdapter adapter;
-    private MovieDetail movie;
+    private ArrayList<MovieDetail> movie_list;
+    private String sort_order;
+
     public MovieFragment() {
         // Required empty public constructor
-    }
-
-    //function to check for network access
-    private boolean isNetWorkAvailable() {
-        ConnectivityManager cm = (ConnectivityManager) getActivity().getSystemService(getActivity().CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = cm.getActiveNetworkInfo();
-        if (networkInfo != null && networkInfo.isConnected()) {
-            return true;
-        }
-        return false;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        sort_order = Utility.getSortOrder(getActivity());
+        if (savedInstanceState != null && savedInstanceState.containsKey("movies")) {
+            movie_list = savedInstanceState.getParcelableArrayList("movies");
+        } else {
+            if(Utility.isNetWorkAvailable(getActivity()))
+                updateMovieList();
+        }
         setHasOptionsMenu(true);
     }
 
@@ -73,8 +64,7 @@ public class MovieFragment extends Fragment {
     private void updateMovieList()
     {
         FetchMovieTask fetchMovieTask = new FetchMovieTask();
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
-        String sort_order = sharedPreferences.getString(getString(R.string.pref_sort_order_key),getString(R.string.pref_sort_order_default));
+        sort_order = Utility.getSortOrder(getActivity());
         fetchMovieTask.execute(sort_order);
     }
 
@@ -85,7 +75,7 @@ public class MovieFragment extends Fragment {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_refresh) {
-            if(isNetWorkAvailable())
+            if(Utility.isNetWorkAvailable(getActivity()))
                 updateMovieList();
             return true;
         }
@@ -93,16 +83,10 @@ public class MovieFragment extends Fragment {
 
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        if(isNetWorkAvailable())
-            updateMovieList();
-    }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        outState.putParcelable("movies", movie);
+        outState.putParcelableArrayList("movies", movie_list);
         super.onSaveInstanceState(outState);
     }
 
@@ -111,38 +95,43 @@ public class MovieFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_movie, container, false);
-
-        adapter = new MovieDetailAdapter(getActivity(), new ArrayList<MovieDetail>());
         GridView gridView = (GridView) rootView.findViewById(R.id.movies_grid);
+        TextView error_text = (TextView) rootView.findViewById(R.id.error_text);
+        adapter = new MovieDetailAdapter(getContext(), new ArrayList<MovieDetail>());
 
         gridView.setAdapter(adapter);
-
-        TextView error_text = (TextView) rootView.findViewById(R.id.error_text);
-        error_text.setText("");
-        if (!isNetWorkAvailable()) {
-            Log.v(MainActivity.class.getSimpleName(),"No Network Detected");
-            error_text.setText("You need an internet connection to view the movies!");
-        }
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 MovieDetail movie = (MovieDetail) parent.getItemAtPosition(position);
                 Intent movieInfoIntent = new Intent(getActivity(),DetailActivity.class)
-                                            .putExtra("MovieDetails",(Parcelable) movie);
+                        .putExtra("MovieDetails", movie);
                 startActivity(movieInfoIntent);
             }
         });
+
+        if (!Utility.isNetWorkAvailable(getActivity())) {
+            Log.v(MainActivity.class.getSimpleName(),"No Network Detected");
+            error_text.setText(R.string.net_error);
+        }
         return rootView;
     }
 
-    class FetchMovieTask extends AsyncTask<String, Void, MovieDetail[]> {
+    @Override
+    public void onResume() {
+        super.onResume();
+        String sort = Utility.getSortOrder(getActivity());
+        if ((sort_order == null || sort_order.equals(sort) ) && sort_order.equals("favorite"))
+            updateMovieList();
+    }
 
-        private final String LOG_TAG = FetchMovieTask.class.getSimpleName();
+    class FetchMovieTask extends AsyncTask<String, Void, MovieDetail[]> {
 
         protected void onPostExecute(MovieDetail[] result) {
             if (result != null){
                 adapter.clear();
                 for (MovieDetail movieInfostr : result){
+                    movie_list.add(movieInfostr);
                     adapter.add(movieInfostr);
                 }
             }
@@ -150,8 +139,6 @@ public class MovieFragment extends Fragment {
 
         private MovieDetail[] getMovieDatafromJson(String movieJsonstr) throws JSONException
         {
-            JSONObject movieInfo = new JSONObject(movieJsonstr);
-
             //Names of objects that need to be extracted
             final String TMDB_RESULTS = "results";
             final String ID = "id";
@@ -177,8 +164,8 @@ public class MovieFragment extends Fragment {
                 String synopsis = movie.getString(SYNOPSIS);
                 String release_date = movie.getString(RELEASE_DATE);
                 String user_rating = movie.getString(USER_RATING);
-                String backdrop_path = movie.getString(BACKDROP_IMG);
-                //Log.v(LOG_TAG,image_uri);
+                String backdrop_path = "http://image.tmdb.org/t/p/w342/".concat(movie.getString(BACKDROP_IMG));
+
                 result[i] = new MovieDetail(id,image_uri,title,synopsis,release_date,user_rating,backdrop_path);
             }
 
@@ -197,7 +184,7 @@ public class MovieFragment extends Fragment {
                 String TMDB_BASE_URL = "http://api.themoviedb.org/3/movie";
                 final String API_KEY = "api_key";
 
-                Log.v(LOG_TAG,"Sort Order:"+params[0]);
+                Timber.v("Sort Order:"+params[0]);
 
                 if(params[0].equals("popular")){
                     TMDB_BASE_URL += "/popular?";
@@ -209,7 +196,7 @@ public class MovieFragment extends Fragment {
                                     .buildUpon()
                                     .appendQueryParameter(API_KEY, BuildConfig.TMDB_API_KEY)
                                     .build();
-                Log.v(LOG_TAG,"Built URI:"+builtUri.toString());
+                Timber.v("Built URI:"+builtUri.toString());
                 URL url = new URL(builtUri.toString());
                 urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setRequestMethod("GET");
@@ -235,11 +222,8 @@ public class MovieFragment extends Fragment {
 
                 movieJsonstr = buffer.toString();
 
-            } catch (MalformedURLException e) {
-                Log.e(LOG_TAG, "Error", e);
-                movieJsonstr = null;
-            } catch (IOException e){
-                Log.e(LOG_TAG, "Error", e);
+            } catch (Exception e) {
+                Timber.e("Error" + e);
                 movieJsonstr = null;
             } finally {
                 if (urlConnection != null){
@@ -250,7 +234,7 @@ public class MovieFragment extends Fragment {
                     {
                         reader.close();
                     } catch (IOException e) {
-                        Log.e(LOG_TAG,"Error Closing Stream", e);
+                        Timber.e("Error Closing Stream" + e);
                     }
                 }
             }
@@ -259,7 +243,7 @@ public class MovieFragment extends Fragment {
             try{
                 result = getMovieDatafromJson(movieJsonstr);
             } catch (JSONException e){
-                Log.e(LOG_TAG,"Error:" + result, e);
+                Timber.e("Error:" + e);
             }
             return result;
         }
