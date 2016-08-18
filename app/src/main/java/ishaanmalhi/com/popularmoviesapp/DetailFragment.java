@@ -32,7 +32,6 @@ import com.squareup.picasso.Picasso;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -48,6 +47,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import ishaanmalhi.com.popularmoviesapp.data.MovieColumns;
+import ishaanmalhi.com.popularmoviesapp.data.MoviesDatabase;
 import ishaanmalhi.com.popularmoviesapp.data.MoviesProvider;
 import ishaanmalhi.com.popularmoviesapp.data.ReviewColumns;
 import ishaanmalhi.com.popularmoviesapp.data.TrailerColumns;
@@ -57,7 +57,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private static final String MOVIE_SHARE_STRING = "Hey! I just found an amazing movie, check it out!: ";
     private static final String FAVORITE = "favorite";
     private static final String[] DETAIL_COLUMNS = {
-            MovieColumns._ID,
             MovieColumns.MOVIE_ID,
             MovieColumns.MOVIE_POSTER_URL,
             MovieColumns.TITLE,
@@ -185,7 +184,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         } else {
             if (intent != null && !Utility.getSortOrder(getActivity()).equals(FAVORITE)) {
                 movie = intent.getParcelableExtra("MovieDetails");
-
                 // Query the TMDB API in two seperate background threads
                 new FetchMovieDetailsTask().execute(movie.id);
             }
@@ -196,8 +194,12 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     private void markFavorite() {
         // Code for putting movie into favorite
         Timber.i("Favorite button tapped");
-        Toast.makeText(getActivity(), "Movie added to favorites!", Toast.LENGTH_SHORT).show();
-        insertData();
+        if (Utility.getSortOrder(getActivity()).equals("favorite")) {
+            Toast.makeText(getActivity(), "Movie is already added to favorites!", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(getActivity(), "Movie added to favorites!", Toast.LENGTH_SHORT).show();
+            insertData();
+        }
     }
 
     private void insertData() {
@@ -289,7 +291,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         protected void onPostExecute(Void aVoid) {
             View view = viewStub.inflate();
             movieDetailsView = new MovieDetailsView(view);
-            Picasso.with(getContext()).load(movie.backdrop_path).into(movieDetailsView.backdrop);
+            Picasso.with(getContext()).load(movie.backdrop_path).fit().centerCrop().into(movieDetailsView.backdrop);
             Picasso.with(getContext()).load(movie.image_url).into(movieDetailsView.poster);
             movieDetailsView.title.setText(movie.title);
             String user_rating_text = movie.user_rating + getResources().getString(R.string.user_rating_base_value);
@@ -326,14 +328,12 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             } catch (NullPointerException e) {
                 Timber.e("Error : " + e);
             }
-            if (!Utility.getSortOrder(getActivity()).equals(FAVORITE)) {
-                movieDetailsView.favorite.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        markFavorite();
-                    }
-                });
-            }
+            movieDetailsView.favorite.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    markFavorite();
+                }
+            });
             getActivity().invalidateOptionsMenu();
 
             super.onPostExecute(aVoid);
@@ -444,6 +444,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        Timber.d("Movie Uri:" + mUri);
         if (mUri != null && Utility.getSortOrder(getActivity()).equals(FAVORITE)) {
             return new CursorLoader(
                     getActivity(),
@@ -465,10 +466,13 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        if (data != null && data.moveToFirst() && Utility.getSortOrder(getActivity()).equals(FAVORITE)) {
-
+        if (!Utility.getSortOrder(getActivity()).equals(FAVORITE)) {
+            return;
+        }
+        if (data != null && data.moveToFirst()) {
+            Timber.d("In Onload finished");
             String backdrop_path = data.getString(COL_BACKDROP_PATH);
-            Picasso.with(getContext()).load(new File(backdrop_path)).into(movieDetailsView.backdrop);
+            Picasso.with(getContext()).load(new File(backdrop_path)).fit().centerCrop().into(movieDetailsView.backdrop);
 
             String image_url = data.getString(COL_POSTER_URL);
             Picasso.with(getContext()).load(new File(image_url)).into(movieDetailsView.poster);
@@ -489,7 +493,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                     .getContentResolver()
                     .query(
                             MoviesProvider.Reviews.fromReview,
-                            new String[]{ ReviewColumns.CONTENT },
+                            new String[]{ReviewColumns.CONTENT},
                             null,
                             null,
                             null);
@@ -522,7 +526,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                     .getContentResolver()
                     .query(
                             MoviesProvider.Trailers.fromTrailer,
-                            new String[]{ TrailerColumns.KEYS },
+                            new String[]{TrailerColumns.KEYS},
                             null,
                             null,
                             null);

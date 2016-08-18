@@ -1,20 +1,23 @@
 package ishaanmalhi.com.popularmoviesapp;
 
-import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Parcelable;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import org.json.JSONArray;
@@ -26,7 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
@@ -38,6 +40,8 @@ public class MovieFragment extends Fragment {
     private MovieDetailAdapter adapter;
     private ArrayList<MovieDetail> movie_list;
     private String sort_order;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
+    private RecyclerView rv;
 
     public MovieFragment() {
         // Required empty public constructor
@@ -46,7 +50,9 @@ public class MovieFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         sort_order = Utility.getSortOrder(getActivity());
+        movie_list = new ArrayList<MovieDetail>();
         if (savedInstanceState != null && savedInstanceState.containsKey("movies")) {
             movie_list = savedInstanceState.getParcelableArrayList("movies");
         } else {
@@ -59,6 +65,7 @@ public class MovieFragment extends Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.moviefragment, menu);
+        super.onCreateOptionsMenu(menu, inflater);
     }
 
     private void updateMovieList()
@@ -90,31 +97,39 @@ public class MovieFragment extends Fragment {
         super.onSaveInstanceState(outState);
     }
 
+    @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        Timber.d("Creating view");
         // Inflate the layout for this fragment
-        View rootView = inflater.inflate(R.layout.fragment_movie, container, false);
-        GridView gridView = (GridView) rootView.findViewById(R.id.movies_grid);
-        TextView error_text = (TextView) rootView.findViewById(R.id.error_text);
+        View view =  inflater.inflate(R.layout.fragment_movies_list, container, false);
+        rv = (RecyclerView) view.findViewById(R.id.recyclerview);
         adapter = new MovieDetailAdapter(getContext(), new ArrayList<MovieDetail>());
-
-        gridView.setAdapter(adapter);
-        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                MovieDetail movie = (MovieDetail) parent.getItemAtPosition(position);
-                Intent movieInfoIntent = new Intent(getActivity(),DetailActivity.class)
-                        .putExtra("MovieDetails", movie);
-                startActivity(movieInfoIntent);
-            }
-        });
+        rv.setAdapter(adapter);
+        rv.setLayoutManager(new GridLayoutManager(rv.getContext(), getResources().getInteger(R.integer.movie_columns)));
 
         if (!Utility.isNetWorkAvailable(getActivity())) {
+            TextView error_text = new TextView(getActivity());
+            error_text.setPadding(20, 20, 20, 20);
+            error_text.setTextSize(22);
+            error_text.setGravity(Gravity.CENTER | Gravity.CENTER_VERTICAL);
+            LinearLayout.LayoutParams error_lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            rv.addView(error_text,error_lp);
             Log.v(MainActivity.class.getSimpleName(),"No Network Detected");
             error_text.setText(R.string.net_error);
         }
-        return rootView;
+
+        mSwipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_refresh);
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                Timber.d("Refreshing..");
+                updateMovieList();
+            }
+        });
+
+        return view;
     }
 
     @Override
@@ -135,6 +150,7 @@ public class MovieFragment extends Fragment {
                     adapter.add(movieInfostr);
                 }
             }
+            mSwipeRefreshLayout.setRefreshing(false);
         }
 
         private MovieDetail[] getMovieDatafromJson(String movieJsonstr) throws JSONException
@@ -159,7 +175,7 @@ public class MovieFragment extends Fragment {
 
                 JSONObject movie = movieArray.getJSONObject(i);
                 String id = movie.getString(ID);
-                String image_uri = "http://image.tmdb.org/t/p/w185/".concat(movie.getString(IMAGE));
+                String image_uri = "http://image.tmdb.org/t/p/w500/".concat(movie.getString(IMAGE));
                 String title = movie.getString(TITLE);
                 String synopsis = movie.getString(SYNOPSIS);
                 String release_date = movie.getString(RELEASE_DATE);

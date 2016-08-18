@@ -35,14 +35,13 @@ public class FavoriteMovieFragment extends Fragment implements LoaderManager.Loa
 
     private static final int CURSOR_LOADER_ID = 0;
 
-    static final int COL_MOVIE_ID = 0;
+    static final int COL_MOVIE_ID = 1;
     static final int COL_POSTER_URL = 2;
 
     public interface Callback {
         // DetailFragment Callback when item is selected
         void onItemSelected(Uri iduri);
     }
-
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
