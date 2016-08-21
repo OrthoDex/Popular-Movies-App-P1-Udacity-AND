@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -26,7 +27,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.melnykov.fab.FloatingActionButton;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
@@ -47,16 +46,17 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import ishaanmalhi.com.popularmoviesapp.data.MovieColumns;
-import ishaanmalhi.com.popularmoviesapp.data.MoviesDatabase;
 import ishaanmalhi.com.popularmoviesapp.data.MoviesProvider;
 import ishaanmalhi.com.popularmoviesapp.data.ReviewColumns;
 import ishaanmalhi.com.popularmoviesapp.data.TrailerColumns;
+import ishaanmalhi.com.popularmoviesapp.views.LikeButtonView;
 import timber.log.Timber;
 
 public class DetailFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String MOVIE_SHARE_STRING = "Hey! I just found an amazing movie, check it out!: ";
     private static final String FAVORITE = "favorite";
     private static final String[] DETAIL_COLUMNS = {
+            MovieColumns._ID,
             MovieColumns.MOVIE_ID,
             MovieColumns.MOVIE_POSTER_URL,
             MovieColumns.TITLE,
@@ -102,8 +102,10 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         LinearLayout trailer_list;
         @BindView(R.id.review_list)
         LinearLayout review_list;
-        @BindView((R.id.fab))
+        @BindView(R.id.like)
         FloatingActionButton favorite;
+        @BindView(R.id.like_button)
+        LikeButtonView likeButton;
 
         public MovieDetailsView(View view) {
             ButterKnife.bind(this, view);
@@ -118,6 +120,31 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     }
 
     @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            movie = savedInstanceState.getParcelable("movie");
+        } else {
+            Bundle arguments = getArguments();
+            Intent intent = getActivity().getIntent();
+            if (Utility.getSortOrder(getActivity()).equals(FAVORITE)) {
+                mUri = arguments.getParcelable(DetailFragment.DETAIL_URI);
+            } else if(arguments != null) {
+                // When sort two Pane
+                movie = arguments.getParcelable("MovieDetails");
+            } else {
+                movie = intent.getParcelableExtra("MovieDetails");
+            }
+            if (movie != null) {
+                Timber.d("Single Pane Intent, movie:" + movie.title);
+                // Query the TMDB API in two seperate background threads
+                new FetchMovieDetailsTask().execute(movie.id);
+            }
+            Timber.d("movie:" + movie + "URI:" + mUri);
+        }
+        super.onCreate(savedInstanceState);
+    }
+
+    @Override
     public void onDestroyView() {
         unbinder.unbind();
         super.onDestroyView();
@@ -126,11 +153,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-
-        Bundle arguments = getArguments();
-        if (arguments != null) {
-            mUri = arguments.getParcelable(DetailFragment.DETAIL_URI);
-        }
         View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
         unbinder = ButterKnife.bind(this, rootView);
         if (Utility.getSortOrder(getActivity()).equals(FAVORITE)) {
@@ -176,29 +198,28 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         super.onActivityCreated(savedInstanceState);
     }
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        Intent intent = getActivity().getIntent();
-        if (savedInstanceState != null) {
-            movie = savedInstanceState.getParcelable("movie");
-        } else {
-            if (intent != null && !Utility.getSortOrder(getActivity()).equals(FAVORITE)) {
-                movie = intent.getParcelableExtra("MovieDetails");
-                // Query the TMDB API in two seperate background threads
-                new FetchMovieDetailsTask().execute(movie.id);
-            }
-        }
-        super.onCreate(savedInstanceState);
-    }
-
-    private void markFavorite() {
+    public void markFavorite() {
         // Code for putting movie into favorite
         Timber.i("Favorite button tapped");
         if (Utility.getSortOrder(getActivity()).equals("favorite")) {
             Toast.makeText(getActivity(), "Movie is already added to favorites!", Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(getActivity(), "Movie added to favorites!", Toast.LENGTH_SHORT).show();
-            insertData();
+            Cursor favoriteCursor = getActivity()
+                    .getContentResolver()
+                    .query(
+                            MoviesProvider.Favorites.FAVORITES_URI,
+                            new String[]{MovieColumns.TITLE},
+                            MovieColumns.TITLE + "=?",
+                            new String[]{movie.title},
+                            null);
+
+            if (favoriteCursor.getCount() != 0)
+                Toast.makeText(getActivity(), "Movie is already added to favorites!", Toast.LENGTH_SHORT).show();
+            else {
+                Toast.makeText(getActivity(), "Movie added to favorites!", Toast.LENGTH_SHORT).show();
+                insertData();
+            }
+            favoriteCursor.close();
         }
     }
 
@@ -332,6 +353,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                 @Override
                 public void onClick(View view) {
                     markFavorite();
+                    movieDetailsView.likeButton.onClick(view);
                 }
             });
             getActivity().invalidateOptionsMenu();
@@ -469,6 +491,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         if (!Utility.getSortOrder(getActivity()).equals(FAVORITE)) {
             return;
         }
+        Timber.d("Count : " + data.getPosition());
         if (data != null && data.moveToFirst()) {
             Timber.d("In Onload finished");
             String backdrop_path = data.getString(COL_BACKDROP_PATH);
@@ -518,6 +541,7 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             movieDetailsView.favorite.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+
                     markFavorite();
                 }
             });
@@ -531,8 +555,9 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                             null,
                             null);
             String[] trailer_keys = new String[trailerCursor.getCount()];
-            reviewCursor.moveToFirst();
+            trailerCursor.moveToFirst();
             ctr = 0;
+            Timber.d("Trailer Count: " + trailerCursor.getCount());
             while (!trailerCursor.isAfterLast()) {
                 trailer_keys[ctr] = trailerCursor.getString(COL_TRAILER_KEY);
                 ctr++;
@@ -543,22 +568,24 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             // Define Layout Params
             LinearLayout.LayoutParams buttonlp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             // Add every trailer key as a button, if network is present, otherwise give simple error
-            for (int i = 0; i < trailer_keys.length; i++) {
-                if (Utility.isNetWorkAvailable(getActivity())) {
+            for (String key : trailer_keys) {
+                if (!Utility.isNetWorkAvailable(getActivity())) {
+                    Timber.d("Offline Trailer Message");
                     TextView textView = new TextView(getActivity());
                     textView.setText(R.string.offline_error);
                     movieDetailsView.trailer_list.addView(textView, buttonlp);
                     break;
-                } else if (trailer_keys[i].equals("No Trailers Found")) {
+                } else if (key.equals("No Trailers Found")) {
+                    Timber.d("No Trailer message");
                     TextView textView = new TextView(getActivity());
-                    textView.setText(trailer_keys[i]);
+                    textView.setText(key);
                     movieDetailsView.trailer_list.addView(textView, buttonlp);
                 } else {
+                    Timber.d("Online, Found Trailers in Database");
                     Button trailerButton = new Button(getActivity());
-                    int j = i + 1;
-                    trailerButton.setText(getResources().getString(R.string.watch_trailer) + j);
+                    trailerButton.setText(getResources().getString(R.string.watch_trailer));
                     movieDetailsView.trailer_list.addView(trailerButton, buttonlp);
-                    String trailer = trailer_keys[i];
+                    String trailer = key;
                     trailerButton.setOnClickListener(new ButtonClickListener(trailer));
                 }
             }

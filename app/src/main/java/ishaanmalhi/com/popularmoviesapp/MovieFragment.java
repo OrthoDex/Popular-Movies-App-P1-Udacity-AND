@@ -1,28 +1,28 @@
 package ishaanmalhi.com.popularmoviesapp;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.GridView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -51,13 +51,14 @@ public class MovieFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        sort_order = Utility.getSortOrder(getActivity());
-        movie_list = new ArrayList<MovieDetail>();
-        if (savedInstanceState != null && savedInstanceState.containsKey("movies")) {
-            movie_list = savedInstanceState.getParcelableArrayList("movies");
-        } else {
-            if(Utility.isNetWorkAvailable(getActivity()))
+        if(Utility.isNetWorkAvailable(getActivity())) {
+            sort_order = Utility.getSortOrder(getActivity());
+            movie_list = new ArrayList<MovieDetail>();
+            if (savedInstanceState != null && savedInstanceState.containsKey("movies")) {
+                movie_list = savedInstanceState.getParcelableArrayList("movies");
+            } else {
                 updateMovieList();
+            }
         }
         setHasOptionsMenu(true);
     }
@@ -97,6 +98,22 @@ public class MovieFragment extends Fragment {
         super.onSaveInstanceState(outState);
     }
 
+    public interface Callback {
+        /**
+         * DetailFragmentCallback for when an item has been selected.
+         */
+        public void onItemSelected(MovieDetail movie);
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if (!Utility.isNetWorkAvailable(getActivity())) {
+            Timber.v("No Network Detected");
+            Snackbar.make(getView(), getString(R.string.net_error), Snackbar.LENGTH_INDEFINITE).show();
+        }
+    }
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -105,27 +122,17 @@ public class MovieFragment extends Fragment {
         // Inflate the layout for this fragment
         View view =  inflater.inflate(R.layout.fragment_movies_list, container, false);
         rv = (RecyclerView) view.findViewById(R.id.recyclerview);
+
+        rv.setLayoutManager(new GridLayoutManager(rv.getContext(), getResources().getInteger(R.integer.movie_columns)));
         adapter = new MovieDetailAdapter(getContext(), new ArrayList<MovieDetail>());
         rv.setAdapter(adapter);
-        rv.setLayoutManager(new GridLayoutManager(rv.getContext(), getResources().getInteger(R.integer.movie_columns)));
-
-        if (!Utility.isNetWorkAvailable(getActivity())) {
-            TextView error_text = new TextView(getActivity());
-            error_text.setPadding(20, 20, 20, 20);
-            error_text.setTextSize(22);
-            error_text.setGravity(Gravity.CENTER | Gravity.CENTER_VERTICAL);
-            LinearLayout.LayoutParams error_lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            rv.addView(error_text,error_lp);
-            Log.v(MainActivity.class.getSimpleName(),"No Network Detected");
-            error_text.setText(R.string.net_error);
-        }
 
         mSwipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_refresh);
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
                 Timber.d("Refreshing..");
-                updateMovieList();
+                getActivity().recreate();
             }
         });
 
@@ -136,7 +143,9 @@ public class MovieFragment extends Fragment {
     public void onResume() {
         super.onResume();
         String sort = Utility.getSortOrder(getActivity());
-        if ((sort_order == null || sort_order.equals(sort) ) && sort_order.equals("favorite"))
+        if (sort_order == null)
+            return;
+        if (!sort_order.equals(sort))
             updateMovieList();
     }
 
@@ -180,7 +189,7 @@ public class MovieFragment extends Fragment {
                 String synopsis = movie.getString(SYNOPSIS);
                 String release_date = movie.getString(RELEASE_DATE);
                 String user_rating = movie.getString(USER_RATING);
-                String backdrop_path = "http://image.tmdb.org/t/p/w342/".concat(movie.getString(BACKDROP_IMG));
+                String backdrop_path = "http://image.tmdb.org/t/p/w780/".concat(movie.getString(BACKDROP_IMG));
 
                 result[i] = new MovieDetail(id,image_uri,title,synopsis,release_date,user_rating,backdrop_path);
             }

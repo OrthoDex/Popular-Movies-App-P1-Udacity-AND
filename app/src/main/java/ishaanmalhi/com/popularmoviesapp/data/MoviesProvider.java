@@ -37,7 +37,7 @@ public final class MoviesProvider {
         @InexactContentUri(
                 name = "MOVIE_ID",
                 path = FAVORITES + "/#",
-                type = "vnd.android.cursor.item/favorites",
+                type = "vnd.android.cursor.item/favorite",
                 whereColumn = MovieColumns._ID,
                 pathSegment = 1)
         public static Uri withId(long id) {
@@ -79,7 +79,7 @@ public final class MoviesProvider {
         @ContentUri(
                 path = FROM_TRAILERS,
                 type = "vnd.android.cursor.dir/trailer_join",
-                join = "JOIN "
+                join = "INNER JOIN "
                         + MoviesDatabase.FAVORITES
                         + " ON "
                         + MoviesDatabase.FAVORITES + "." + MovieColumns.MOVIE_ID

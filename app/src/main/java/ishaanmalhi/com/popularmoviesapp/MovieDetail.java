@@ -2,6 +2,10 @@ package ishaanmalhi.com.popularmoviesapp;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import timber.log.Timber;
 
 public class MovieDetail implements Parcelable {
@@ -22,7 +26,14 @@ public class MovieDetail implements Parcelable {
     public MovieDetail(String movie_id, String movie_image_uri, String title, String synopsis, String release_date, String user_rating, String backdrop) {
         this.id = movie_id;
         this.image_url = movie_image_uri;
-        this.release_date = release_date;
+
+        Date date = null;
+        try {
+            date = new SimpleDateFormat("yyyy-MM-dd").parse(release_date);
+        } catch (ParseException e) {
+            Timber.e(e.toString());
+        }
+        this.release_date = new SimpleDateFormat("dd MMMM yy").format(date);
         this.user_rating = user_rating;
         this.title = title;
         this.synopsis = synopsis;
@@ -34,7 +45,6 @@ public class MovieDetail implements Parcelable {
         if (trailer_keys.length > 0) {
             this.trailer_keys = new String[trailer_keys.length];
             System.arraycopy(trailer_keys, 0, this.trailer_keys, 0, trailer_keys.length);
-            Timber.d("Trailer No 0:" + this.trailer_keys[0]);
         } else {
             this.trailer_keys = new String[1];
             this.trailer_keys[0] = "No Trailers Found";

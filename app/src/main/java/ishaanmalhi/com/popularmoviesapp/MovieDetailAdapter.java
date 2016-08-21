@@ -17,6 +17,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,6 +35,7 @@ import timber.log.Timber;
 
 public class MovieDetailAdapter extends RecyclerView.Adapter<MovieDetailAdapter.ViewHolder> {
     private ArrayList<MovieDetail> mValues;
+    private Context mContext;
 
     public void clear() {
         mValues.clear();
@@ -48,7 +50,12 @@ public class MovieDetailAdapter extends RecyclerView.Adapter<MovieDetailAdapter.
     //ViewHolder Pattern to reduce no of calls to findViewById()
 
     public class ViewHolder extends RecyclerView.ViewHolder{
-        @BindView(R.id.movie_image) ImageView poster;
+        @BindView(R.id.movie_image)
+        ImageView poster;
+        @BindView(R.id.movie_title)
+        TextView title;
+        @BindView(R.id.rating)
+        TextView rating;
         View mView;
 
         public ViewHolder(View view) {
@@ -63,6 +70,7 @@ public class MovieDetailAdapter extends RecyclerView.Adapter<MovieDetailAdapter.
 
     public MovieDetailAdapter(Context context, ArrayList<MovieDetail> movieDetails) {
         mValues = movieDetails;
+        mContext = context;
     }
 
     @Override
@@ -78,12 +86,14 @@ public class MovieDetailAdapter extends RecyclerView.Adapter<MovieDetailAdapter.
         holder.mView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Context context = view.getContext();
-                Intent movieInfoIntent = new Intent(context,DetailActivity.class)
-                        .putExtra("MovieDetails", movieDetail);
-                context.startActivity(movieInfoIntent);
+                ((MovieFragment.Callback) mContext)
+                        .onItemSelected(movieDetail);
             }
         });
+
+        holder.title.setText(movieDetail.title);
+        holder.rating.setText(movieDetail.user_rating + mContext.getString(R.string.user_rating_base_value));
+
         Picasso.with(holder.poster.getContext())
                 .load(movieDetail.image_url)
                 .fit()

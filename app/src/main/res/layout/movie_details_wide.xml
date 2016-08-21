@@ -4,7 +4,8 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginTop="?actionBarSize">
+    android:layout_marginTop="?actionBarSize"
+    android:background="@color/white">
     <ImageView
         android:id="@+id/backdrop_path"
         android:layout_width="match_parent"
@@ -24,19 +25,14 @@
             android:id="@+id/original_title"
             android:backgroundTint="@color/colorPrimary"
             />
-        <com.melnykov.fab.FloatingActionButton
-            android:id="@+id/fab"
+
+        <ishaanmalhi.com.popularmoviesapp.views.LikeButtonView
+            android:id="@+id/like_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|right|end"
-            android:layout_margin="40sp"
-            android:layout_centerVertical="true"
-            android:layout_alignParentEnd="true"
-            android:clickable="true"
-            android:scaleType="fitCenter"
-            android:src="@mipmap/favorite"
-            android:backgroundTint="@color/colorAccent"
-            />
+            android:layout_gravity="center"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true" />
     </RelativeLayout>
     <LinearLayout
         android:layout_width="match_parent"
@@ -64,23 +60,45 @@
             android:orientation="vertical"
             android:layout_weight="5"
             android:gravity="center_vertical|bottom">
-            <TextView
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/user_rating"
-                android:fontFamily="sans-serif-condensed"
-                android:textColor="@color/black"
-                android:textSize="22sp"
-                android:padding="@dimen/content_padding" />
-            <TextView
+                android:orientation="horizontal">
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerInside"
+                    android:paddingTop="@dimen/content_padding"
+                    android:src="@drawable/ic_grade_black_48dp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/user_rating"
+                    android:fontFamily="sans-serif-condensed"
+                    android:textColor="@color/black"
+                    android:textSize="22sp"
+                    android:layout_weight="1"
+                    android:padding="@dimen/content_padding" />
+            </LinearLayout>
+            <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/release_date"
-                android:fontFamily="sans-serif-condensed"
-                android:textColor="@color/black"
-                android:textSize="22sp"
-                android:padding="@dimen/content_padding" />
-
+                android:layout_height="wrap_content">
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerInside"
+                    android:paddingTop="@dimen/content_padding"
+                    android:src="@drawable/ic_date_range_black_48dp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/release_date"
+                    android:fontFamily="sans-serif-condensed"
+                    android:textColor="@color/black"
+                    android:textSize="22sp"
+                    android:layout_weight="1"
+                    android:padding="@dimen/content_padding" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
     <TextView
@@ -93,14 +111,24 @@
         android:fontFamily="sans-serif-condensed"
         android:textColor="@color/black"
         android:layout_gravity="bottom" />
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="22sp"
-        android:padding="20dp"
-        android:fontFamily="sans-serif-condensed"
-        android:textColor="@color/black"
-        android:text="@string/trailers"/>
+        android:layout_height="wrap_content">
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="@dimen/content_padding"
+            android:paddingLeft="@dimen/content_padding"
+            android:src="@drawable/ic_movie_black_24dp"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:textSize="22sp"
+            android:padding="20dp"
+            android:fontFamily="sans-serif-condensed"
+            android:textColor="@color/black"
+            android:text="@string/trailers"/>
+    </LinearLayout>
     <LinearLayout
         android:id="@+id/trailer_list"
         android:layout_width="match_parent"
@@ -108,14 +136,24 @@
         android:padding="20dp"
         android:orientation="vertical">
     </LinearLayout>
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="20dp"
-        android:textSize="22sp"
-        android:fontFamily="sans-serif-condensed"
-        android:textColor="@color/black"
-        android:text="@string/reviews"/>
+        android:layout_height="wrap_content">
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:paddingTop="@dimen/content_padding"
+            android:paddingLeft="@dimen/content_padding"
+            android:src="@drawable/ic_face_black_24dp"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="20dp"
+            android:textSize="22sp"
+            android:fontFamily="sans-serif-condensed"
+            android:textColor="@color/black"
+            android:text="@string/reviews"/>
+    </LinearLayout>
     <LinearLayout
         android:id="@+id/review_list"
         android:layout_width="match_parent"
