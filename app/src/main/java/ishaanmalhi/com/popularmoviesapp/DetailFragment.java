@@ -8,6 +8,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -125,19 +126,18 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             movie = savedInstanceState.getParcelable("movie");
         } else {
             Bundle arguments = getArguments();
-            Intent intent = getActivity().getIntent();
-            if (Utility.getSortOrder(getActivity()).equals(FAVORITE)) {
-                mUri = arguments.getParcelable(DetailFragment.DETAIL_URI);
-            } else if(arguments != null) {
-                // When sort two Pane
-                movie = arguments.getParcelable("MovieDetails");
-            } else {
-                movie = intent.getParcelableExtra("MovieDetails");
-            }
-            if (movie != null) {
-                Timber.d("Single Pane Intent, movie:" + movie.title);
-                // Query the TMDB API in two seperate background threads
-                new FetchMovieDetailsTask().execute(movie.id);
+            if (arguments != null) {
+                if (Utility.getSortOrder(getActivity()).equals(FAVORITE))
+                    mUri = arguments.getParcelable(DetailFragment.DETAIL_URI);
+                else {
+                    Intent intent = getActivity().getIntent();
+                    movie = intent.getParcelableExtra("MovieDetails");
+                    if (movie == null) {
+                        movie = arguments.getParcelable("MovieDetails");
+                    }
+
+                    new FetchMovieDetailsTask().execute(movie.id);
+                }
             }
             Timber.d("movie:" + movie + "URI:" + mUri);
         }
@@ -273,8 +273,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             ContentProviderOperation.Builder tBuilder = ContentProviderOperation.newInsert(MoviesProvider.Trailers.TRAILER_URI);
 
             tBuilder.withValue(TrailerColumns.KEYS,trailer);
-            tBuilder.withValue(ReviewColumns.MOVIE_ID, movie.id);
-            reviewBatchOperations.add(tBuilder.build());
+            tBuilder.withValue(TrailerColumns.MOVIE_ID, movie.id);
+            trailerBatchOperations.add(tBuilder.build());
         }
         try {
             getActivity().getContentResolver().applyBatch(MoviesProvider.AUTHORITY, trailerBatchOperations);
@@ -419,7 +419,6 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                         }
                     }
                 }
-
                 try {
                     getMovieDetailsfromJson(movieJsonstr, aType);
                 } catch (JSONException e) {
@@ -440,6 +439,10 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             switch (type) {
                 case "videos":
                     JSONArray videosArray = movieDetailsJson.getJSONArray(RESULTS);
+                    if (videosArray == null) {
+                        Snackbar.make(getView(), getString(R.string.net_error), Snackbar.LENGTH_INDEFINITE).show();
+                    }
+
                     String[] keys = new String[videosArray.length()];
                     for (int i = 0; i < videosArray.length(); i++) {
                         JSONObject video = videosArray.getJSONObject(i);
@@ -450,6 +453,10 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                     break;
                 case "reviews":
                     JSONArray reviewsArray = movieDetailsJson.getJSONArray(RESULTS);
+                    if (reviewsArray == null) {
+                        Snackbar.make(getView(), getString(R.string.net_error), Snackbar.LENGTH_INDEFINITE).show();
+                    }
+
                     String[] reviews = new String[reviewsArray.length()];
                     for (int i = 0; i < reviewsArray.length(); i++) {
                         JSONObject video = reviewsArray.getJSONObject(i);

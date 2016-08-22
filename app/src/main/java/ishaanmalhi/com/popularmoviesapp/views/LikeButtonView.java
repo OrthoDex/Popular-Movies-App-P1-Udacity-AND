@@ -72,7 +72,7 @@ public class LikeButtonView extends FrameLayout implements View.OnClickListener 
     @Override
     public void onClick(View view) {
         isChecked = !isChecked;
-        heart.setImageResource(isChecked ? R.drawable.ic_favorite_black_48dp : R.drawable.ic_favorite_border_white_48dp);
+        heart.setImageResource(isChecked ? R.drawable.ic_favorite_yellow_48dp : R.drawable.ic_favorite_border_white_48dp);
         Timber.d("Heart clicked");
         if (animatorSet != null) {
             animatorSet.cancel();

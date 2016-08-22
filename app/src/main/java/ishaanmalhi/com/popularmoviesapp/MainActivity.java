@@ -7,6 +7,7 @@ import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -48,7 +49,10 @@ public class MainActivity extends AppCompatActivity implements FavoriteMovieFrag
         if (findViewById(R.id.movie_detail_container) != null) {
             mTwoPane = true;
             Timber.d("Two pane mode.");
-            if (savedInstanceState == null) {
+            if (!Utility.isNetWorkAvailable(this)) {
+                Timber.d("No Network found");
+                Snackbar.make(findViewById(R.id.movie_detail_container), R.string.offline_error, Snackbar.LENGTH_INDEFINITE);
+            } else if (savedInstanceState == null) {
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.movie_detail_container, new DetailFragment(), DETAILFRAGMENT_TAG)
                         .commit();

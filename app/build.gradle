@@ -53,4 +53,7 @@ dependencies {
     // Butterknife for view binding
     compile 'com.jakewharton:butterknife:8.2.1'
     apt 'com.jakewharton:butterknife-compiler:8.2.1'
+
+    // Expandable Layout
+    compile 'com.github.aakira:expandable-layout:1.5.1@aar'
 }

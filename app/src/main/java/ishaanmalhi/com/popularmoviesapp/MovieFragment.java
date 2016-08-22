@@ -45,6 +45,7 @@ public class MovieFragment extends Fragment {
 
     public MovieFragment() {
         // Required empty public constructor
+        setHasOptionsMenu(true);
     }
 
     @Override
@@ -60,7 +61,6 @@ public class MovieFragment extends Fragment {
                 updateMovieList();
             }
         }
-        setHasOptionsMenu(true);
     }
 
     @Override
