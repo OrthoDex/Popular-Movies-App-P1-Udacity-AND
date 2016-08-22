@@ -28,6 +28,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.gc.materialdesign.views.ButtonRectangle;
+import com.github.aakira.expandablelayout.ExpandableLinearLayout;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
@@ -47,6 +49,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import ishaanmalhi.com.popularmoviesapp.data.MovieColumns;
+import ishaanmalhi.com.popularmoviesapp.data.MoviesDatabase;
 import ishaanmalhi.com.popularmoviesapp.data.MoviesProvider;
 import ishaanmalhi.com.popularmoviesapp.data.ReviewColumns;
 import ishaanmalhi.com.popularmoviesapp.data.TrailerColumns;
@@ -103,6 +106,14 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
         LinearLayout trailer_list;
         @BindView(R.id.review_list)
         LinearLayout review_list;
+        @BindView(R.id.trailer_header)
+        LinearLayout trailer_header;
+        @BindView(R.id.trailer_expandable_list)
+        ExpandableLinearLayout TexpandableLinearLayout;
+        @BindView(R.id.review_header)
+        LinearLayout review_header;
+        @BindView(R.id.review_expandable_list)
+        ExpandableLinearLayout RexpandableLinearLayout;
         @BindView(R.id.like)
         FloatingActionButton favorite;
         @BindView(R.id.like_button)
@@ -155,6 +166,8 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
         unbinder = ButterKnife.bind(this, rootView);
+
+
         if (Utility.getSortOrder(getActivity()).equals(FAVORITE)) {
             View view = viewStub.inflate();
             movieDetailsView = new MovieDetailsView(view);
@@ -338,6 +351,13 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                 }
             }
 
+            movieDetailsView.trailer_header.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    movieDetailsView.TexpandableLinearLayout.toggle();
+                }
+            });
+
             LinearLayout.LayoutParams reviewlp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             for (int i = 0; i < movie.reviews.length; i++) {
                 TextView review = new TextView(getActivity());
@@ -349,6 +369,14 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             } catch (NullPointerException e) {
                 Timber.e("Error : " + e);
             }
+
+            movieDetailsView.review_header.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    movieDetailsView.RexpandableLinearLayout.toggle();
+                }
+            });
+
             movieDetailsView.favorite.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -420,7 +448,11 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                     }
                 }
                 try {
-                    getMovieDetailsfromJson(movieJsonstr, aType);
+                    if (movieJsonstr == null) {
+                        Snackbar.make(getView(), getString(R.string.net_error), Snackbar.LENGTH_INDEFINITE).show();
+                    } else {
+                        getMovieDetailsfromJson(movieJsonstr, aType);
+                    }
                 } catch (JSONException e) {
                     Timber.e("Error:" + e);
                 }
@@ -519,51 +551,22 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
             String release_date = data.getString(COL_RELEASE_DATE);
             movieDetailsView.release_date.setText(release_date);
 
-            Cursor reviewCursor = getActivity()
-                    .getContentResolver()
-                    .query(
-                            MoviesProvider.Reviews.fromReview,
-                            new String[]{ReviewColumns.CONTENT},
-                            null,
-                            null,
-                            null);
-            String[] reviews = new String[reviewCursor.getCount()];
-            reviewCursor.moveToFirst();
-            int ctr = 0;
-            while (!reviewCursor.isAfterLast()) {
-                reviews[ctr] = reviewCursor.getString(COL_CONTENT);
-                ctr++;
-                reviewCursor.moveToNext();
-            }
-
-            reviewCursor.close();
-
-            LinearLayout.LayoutParams reviewlp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            for (String singleReview : reviews) {
-                TextView review = new TextView(getActivity());
-                review.setText(singleReview);
-                movieDetailsView.review_list.addView(review, reviewlp);
-            }
-            getView().findViewById(R.id.progressBarCircularIndeterminate).setVisibility(View.INVISIBLE);
-            movieDetailsView.favorite.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-
-                    markFavorite();
-                }
-            });
+            String tmdb_id = data.getString(COL_TMDB_ID);
+            Timber.d("Movie ID: " + tmdb_id);
 
             Cursor trailerCursor = getActivity()
                     .getContentResolver()
                     .query(
                             MoviesProvider.Trailers.fromTrailer,
                             new String[]{TrailerColumns.KEYS},
-                            null,
-                            null,
+                            MoviesDatabase.TRAILERS + "." + TrailerColumns.MOVIE_ID + "=?",
+                            new String[]{tmdb_id},
                             null);
             String[] trailer_keys = new String[trailerCursor.getCount()];
             trailerCursor.moveToFirst();
-            ctr = 0;
+
+            int ctr = 0;
+
             Timber.d("Trailer Count: " + trailerCursor.getCount());
             while (!trailerCursor.isAfterLast()) {
                 trailer_keys[ctr] = trailerCursor.getString(COL_TRAILER_KEY);
@@ -596,6 +599,57 @@ public class DetailFragment extends Fragment implements LoaderManager.LoaderCall
                     trailerButton.setOnClickListener(new ButtonClickListener(trailer));
                 }
             }
+
+            movieDetailsView.trailer_header.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    movieDetailsView.TexpandableLinearLayout.toggle();
+                }
+            });
+
+            Cursor reviewCursor = getActivity()
+                    .getContentResolver()
+                    .query(
+                            MoviesProvider.Reviews.fromReview,
+                            new String[]{ReviewColumns.CONTENT},
+                            MoviesDatabase.REVIEWS + "." + ReviewColumns.MOVIE_ID + "=?",
+                            new String[]{tmdb_id},
+                            null);
+            String[] reviews = new String[reviewCursor.getCount()];
+            reviewCursor.moveToFirst();
+
+            ctr = 0;
+
+            while (!reviewCursor.isAfterLast()) {
+                reviews[ctr] = reviewCursor.getString(COL_CONTENT);
+                ctr++;
+                reviewCursor.moveToNext();
+            }
+
+            reviewCursor.close();
+
+            LinearLayout.LayoutParams reviewlp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            for (String singleReview : reviews) {
+                TextView review = new TextView(getActivity());
+                review.setText(singleReview);
+                movieDetailsView.review_list.addView(review, reviewlp);
+            }
+
+            movieDetailsView.review_header.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    movieDetailsView.RexpandableLinearLayout.toggle();
+                }
+            });
+
+            getView().findViewById(R.id.progressBarCircularIndeterminate).setVisibility(View.INVISIBLE);
+            movieDetailsView.favorite.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+
+                    markFavorite();
+                }
+            });
         }
     }
 
