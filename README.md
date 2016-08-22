@@ -1,6 +1,6 @@
 # Project 1: Popular Movies App
 A repository for the Popular Movies Android App as part of the Udacity Android Nanodegree Program.
-Logo copyright to George Bokhua https://dribbble.com/george-bokhua
+Logo copyright to [George Bokhua](https://dribbble.com/george-bokhua)
 
 ## Usage:
 Clone and put your [TMDB API key](https://www.themoviedb.org/faq/api) in gradle.properties as follows:
